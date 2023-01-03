@@ -1,9 +1,29 @@
 #include <stdio.h>
-#include <string.h>
 #include "Ejemplo_1.h"
 
 int main() {
-    char* json_string = "{\"name\": \"John\", \"age\": 30, \"citys\": \"New York\"}";
+    /*char* json_string = "{"
+                            "\"name\": \"John\", "
+                            "\"age\": 30, "
+                            "\"city\": \"New York\""
+                        "}";*/
+    char* json_string = "{"
+                            "\"name\": \"John\","
+                            "\"age\": 30,"
+                            "\"city\": \"New York\","
+                            "\"isEmployed\": true,"
+                        "\"children\": ["
+                            "{"
+                                "\"name\": \"Samantha\","
+                                "\"age\": 3"
+                            "},"
+                            "{"
+                                "\"name\": \"Alex\","
+                                "\"age\": 5"
+                            "}"
+                        "]"
+                        "}";
+//{"name": "John","age": 30,"city": "New York","isEmployed": true,"children": [{"name": "Samantha","age": 3},{"name": "Alex","age": 5}]}
     ListObjects* root = parse_json(json_string);
 
     if (root == NULL) {

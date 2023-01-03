@@ -3,14 +3,14 @@
 #define MAX_TOKEN_LEN 128
 
 typedef struct {
-    int size;
-    struct JSONObject **elements;
-}JSONArray;
-
-typedef struct {
-    struct JSONObject* head;
+    struct JSONObject **head;
     int sizeList;
 }ListObjects;
+
+typedef struct {
+    int size;
+    ListObjects **elements;
+}JSONArray;
 
 typedef struct JSONObject {
     char *key;
@@ -64,7 +64,8 @@ void parse_true(JSONParser *parser);
 void parse_false(JSONParser *parser);
 void parse_null(JSONParser *parser);
 void parse_token(JSONParser *parser);
-ListObjects *parse_object(JSONParser *parser);
+ListObjects *parse_object(JSONParser *parser,ListObjects *listObjects);
 JSONArray parse_array(JSONParser *parser);
 ListObjects *parse_json(char *json);
 void free_json_object(JSONObject *object);
+ListObjects *ceateListObjects();
