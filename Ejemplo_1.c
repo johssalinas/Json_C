@@ -72,7 +72,7 @@ void parse_number(JSONParser *parser) {
 void parse_true(JSONParser *parser) {
     parser->current_token.type = TOKEN_TRUE;
     strcpy(parser->current_token.value, "true");
-    parser->index += 3;
+    parser->index += 4;
 }
 
 void parse_false(JSONParser *parser) {
@@ -137,22 +137,37 @@ void createObject(JSONObject *object){
     object->value_type = 0;
 }
 
-ListObjects *parse_object(JSONParser *parser) {
-    static ListObjects listObjects;
-    if(listObjects.head == NULL) {
-        listObjects.head = NULL;
-        listObjects.sizeList = 0;
-    }
+ListObjects* ceateListObjects(){
+    ListObjects *plistObjects = malloc(sizeof(ListObjects));
+    static int i = 0;
+    plistObjects->head = malloc(sizeof(JSONObject));
+    plistObjects->head[i] = malloc(sizeof(JSONObject));
+    plistObjects->head[i] = NULL;
+    plistObjects->sizeList = 0;
+    return plistObjects;
+}
+
+void nextObjetc(JSONObject *object, ListObjects *listObjects,int i){
+    if(listObjects->head[i] != NULL) {
+        JSONObject *aux = listObjects->head[i];
+        listObjects->head[i] = object;
+        listObjects->head[i]->next = aux;
+        listObjects->sizeList++;
+    }else listObjects->head[i] = object;
+}
+
+ListObjects *parse_object(JSONParser *parser,ListObjects *listObjects) {
+    static int i = 0;
     JSONObject *object = malloc(sizeof(JSONObject));
     createObject(object);
     parse_token(parser);
     while (parser->current_token.type != TOKEN_OBJECT_END) {
         if(parser->current_token.type == TOKEN_OBJECT_BEGIN)
             parse_token(parser);
-        if (parser->current_token.type != TOKEN_STRING) {
+        /*if (parser->current_token.type != TOKEN_STRING) {
 // error
             return NULL;
-        }
+        }*/
         object->key = strdup(parser->current_token.value);
             parse_token(parser);
         if (parser->current_token.type != TOKEN_COLON) {
@@ -171,7 +186,7 @@ ListObjects *parse_object(JSONParser *parser) {
                 break;
             case TOKEN_OBJECT_BEGIN:
                 object->value_type = 3;
-                object->value.object_value = *parse_object(parser);
+                object->value.object_value = *parse_object(parser,listObjects);
                 break;
             case TOKEN_ARRAY_BEGIN:
                 object->value_type = 4;
@@ -180,6 +195,7 @@ ListObjects *parse_object(JSONParser *parser) {
             case TOKEN_TRUE:
                 object->value_type = 5;
                 object->value.bool_value = 1;
+                //parse_token(parser);
                 break;
             case TOKEN_FALSE:
                 object->value_type = 5;
@@ -193,68 +209,67 @@ ListObjects *parse_object(JSONParser *parser) {
                 return NULL;
         }
         parse_token(parser);
+        nextObjetc(object,listObjects,i);
         if (parser->current_token.type == TOKEN_COMMA) {
-            JSONObject *aux = listObjects.head;
-            listObjects.head = object;
-            listObjects.head->next = aux;
-            listObjects.sizeList++;
-            parse_object(parser);
-            //parse_token(parser);
-        }else {
-            JSONObject *aux = listObjects.head;
-            listObjects.head = object;
-            listObjects.head->next = aux;
-            listObjects.sizeList++;
+            parse_object(parser,listObjects);
         }
     }
-    return &listObjects;
+    return listObjects;
 }
 
 JSONArray parse_array(JSONParser *parser) {
     JSONArray array;
     array.size = 0;
-    array.elements = NULL;
+    array.elements = malloc(sizeof(ListObjects*));
     parse_token(parser);
+    static int i = 0;
+    ListObjects *listObjects = ceateListObjects();
     while (parser->current_token.type != TOKEN_ARRAY_END) {
-        array.elements = realloc(array.elements, sizeof(JSONObject) * (array.size + 1));
+        array.elements = realloc(array.elements, (array.size + 1)* sizeof(ListObjects));
+        array.elements[array.size] = malloc(sizeof(JSONArray));
+        array.elements[array.size]->head = malloc(sizeof(JSONObject));
+        array.elements[array.size]->head = realloc(array.elements[array.size]->head, (i+1)*sizeof(JSONObject));
+        array.elements[array.size]->head[i] = malloc(sizeof(JSONObject));
         switch (parser->current_token.type) {
             case TOKEN_STRING:
                 array.elements[array.size] = malloc(sizeof(JSONObject));
-                array.elements[array.size]->key = NULL;
-                array.elements[array.size]->value_type = 1;
-                array.elements[array.size]->value.string_value = strdup(parser->current_token.value);
+                array.elements[array.size]->head[i]->key = NULL;
+                array.elements[array.size]->head[i]->value_type = 1;
+                array.elements[array.size]->head[i]->value.string_value = strdup(parser->current_token.value);
                 break;
             case TOKEN_NUMBER:
                 array.elements[array.size] = malloc(sizeof(JSONObject));
-                array.elements[array.size]->key = NULL;
-                array.elements[array.size]->value_type = 2;
-                array.elements[array.size]->value.number_value = atof(parser->current_token.value);
+                array.elements[array.size]->head[i]->key = NULL;
+                array.elements[array.size]->head[i]->value_type = 2;
+                array.elements[array.size]->head[i]->value.number_value = atof(parser->current_token.value);
                 break;
             case TOKEN_OBJECT_BEGIN:
-                array.elements[array.size] = (struct JSONObject *) parse_object(parser);
+                parse_object(parser, listObjects);
+                array.elements[array.size]->head[i] = listObjects->head[0];
+                i++;
                 break;
             case TOKEN_ARRAY_BEGIN:
                 array.elements[array.size] = malloc(sizeof(JSONObject));
-                array.elements[array.size]->key = NULL;
-                array.elements[array.size]->value_type = 4;
-                array.elements[array.size]->value.array_value = parse_array(parser);
+                array.elements[array.size]->head[i]->key = NULL;
+                array.elements[array.size]->head[i]->value_type = 4;
+                array.elements[array.size]->head[i]->value.array_value = parse_array(parser);
                 break;
             case TOKEN_TRUE:
                 array.elements[array.size] = malloc(sizeof(JSONObject));
-                array.elements[array.size]->key = NULL;
-                array.elements[array.size]->value_type = 5;
-                array.elements[array.size]->value.bool_value = 1;
+                array.elements[array.size]->head[i]->key = NULL;
+                array.elements[array.size]->head[i]->value_type = 5;
+                array.elements[array.size]->head[i]->value.bool_value = 1;
                 break;
             case TOKEN_FALSE:
                 array.elements[array.size] = malloc(sizeof(JSONObject));
-                array.elements[array.size]->key = NULL;
-                array.elements[array.size]->value_type = 5;
-                array.elements[array.size]->value.bool_value = 0;
+                array.elements[array.size]->head[i]->key = NULL;
+                array.elements[array.size]->head[i]->value_type = 5;
+                array.elements[array.size]->head[i]->value.bool_value = 0;
                 break;
             case TOKEN_NULL:
                 array.elements[array.size] = malloc(sizeof(JSONObject));
-                array.elements[array.size]->key = NULL;
-                array.elements[array.size]->value_type = 6;
+                array.elements[array.size]->head[i]->key = NULL;
+                array.elements[array.size]->head[i]->value_type = 6;
                 break;
             default:
 // error
@@ -273,7 +288,8 @@ ListObjects *parse_json(char *json) {
     JSONParser parser;
     parser.json = json;
     parser.index = 0;
-    return parse_object(&parser);
+    ListObjects *listObjects = ceateListObjects();
+    return parse_object(&parser,listObjects);
 }
 
 /*void free_json_object(JSONObject *object) {
