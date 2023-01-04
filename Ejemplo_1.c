@@ -195,7 +195,6 @@ ListObjects *parse_object(JSONParser *parser,ListObjects *listObjects) {
             case TOKEN_TRUE:
                 object->value_type = 5;
                 object->value.bool_value = 1;
-                //parse_token(parser);
                 break;
             case TOKEN_FALSE:
                 object->value_type = 5;
@@ -223,13 +222,15 @@ JSONArray parse_array(JSONParser *parser) {
     array.elements = malloc(sizeof(ListObjects*));
     parse_token(parser);
     static int i = 0;
-    ListObjects *listObjects = ceateListObjects();
+    array.elements[array.size] = malloc(sizeof(JSONArray));
+    array.elements[array.size]->head = malloc(sizeof(JSONObject));
     while (parser->current_token.type != TOKEN_ARRAY_END) {
-        array.elements = realloc(array.elements, (array.size + 1)* sizeof(ListObjects));
-        array.elements[array.size] = malloc(sizeof(JSONArray));
-        array.elements[array.size]->head = malloc(sizeof(JSONObject));
-        array.elements[array.size]->head = realloc(array.elements[array.size]->head, (i+1)*sizeof(JSONObject));
-        array.elements[array.size]->head[i] = malloc(sizeof(JSONObject));
+        ListObjects *listObjects = ceateListObjects();
+        array.elements = realloc(array.elements, (array.size + 1) * sizeof(ListObjects));
+        array.elements[array.size] = realloc(array.elements[0], (array.size + 1) * sizeof(ListObjects));
+        array.elements[array.size]->head = realloc(array.elements[array.size]->head, (i+1)*sizeof(ListObjects));
+        array.elements[array.size]->head[i] = malloc(sizeof(JSONObject*));
+       // array.elements[array.size]->head[i] = realloc(array.elements[array.size]->head[i],sizeof(JSONObject));
         switch (parser->current_token.type) {
             case TOKEN_STRING:
                 array.elements[array.size] = malloc(sizeof(JSONObject));
@@ -246,7 +247,6 @@ JSONArray parse_array(JSONParser *parser) {
             case TOKEN_OBJECT_BEGIN:
                 parse_object(parser, listObjects);
                 array.elements[array.size]->head[i] = listObjects->head[0];
-                i++;
                 break;
             case TOKEN_ARRAY_BEGIN:
                 array.elements[array.size] = malloc(sizeof(JSONObject));
@@ -275,12 +275,13 @@ JSONArray parse_array(JSONParser *parser) {
 // error
                 return array;
         }
-        array.size++;
+        i++;
         parse_token(parser);
         if (parser->current_token.type == TOKEN_COMMA) {
             parse_token(parser);
         }
     }
+    array.size++;
     return array;
 }
 
