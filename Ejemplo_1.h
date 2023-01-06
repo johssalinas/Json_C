@@ -3,7 +3,7 @@
 #define MAX_TOKEN_LEN 128
 
 typedef struct {
-    struct JSONObject **head;
+    struct JSONObject *head;
     int sizeList;
 }ListObjects;
 
@@ -24,6 +24,19 @@ typedef struct JSONObject {
     int value_type;
     struct JSONObject *next;
 } JSONObject;
+
+typedef struct {
+    char* name;
+    int age;
+}Children;
+
+typedef struct {
+    char* name;
+    int age;
+    char* city;
+    char* isEmployed;
+    Children children;
+}Data;
 
 typedef enum {
     TOKEN_OBJECT_BEGIN,
@@ -69,3 +82,4 @@ JSONArray parse_array(JSONParser *parser);
 ListObjects *parse_json(char *json);
 void free_json_object(JSONObject *object);
 ListObjects *ceateListObjects();
+void nextObjetc(JSONObject *object, ListObjects *listObjects);
